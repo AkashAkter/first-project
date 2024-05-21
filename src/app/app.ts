@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express'
 import cors from 'cors'
-import { StudentRoutes } from '../../modules/student/student.route'
+import { StudentRoutes } from './modules/student/student.route'
 const app: Application = express()
 
 app.use(express.json())
