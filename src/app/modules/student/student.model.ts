@@ -79,7 +79,12 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       type: UserNameSchema,
       required: [true, 'this field is required'],
     },
-    password: { type: String, required: true },
+    user: {
+      type: Schema.Types.ObjectId,
+      required: [true, 'this field is required'],
+      unique: true,
+      ref: 'User',
+    },
     gender: {
       type: String,
       enum: {
@@ -124,11 +129,7 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       required: [true, 'this field is required'],
     },
     profileImg: { type: String },
-    isActive: {
-      type: String,
-      enum: ['active', 'block'],
-      default: 'active',
-    },
+
     isDeleted: {
       type: Boolean,
       default: false,
@@ -146,24 +147,6 @@ studentSchema.virtual('fullName').get(function () {
   return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName} `
 })
 
-//pre save middleware
-studentSchema.pre('save', async function (next) {
-  // console.log(this, 'pre hook')
-  //hashing password
-  const user = this
-  user.password = await bcrypt.hash(
-    user.password,
-    Number(config.bcrypt_salt_rounds),
-  )
-  next()
-})
-
-//post save middleware
-studentSchema.post('save', function (doc, next) {
-  doc.password = ''
-  next()
-})
-
 studentSchema.pre('find', function (next) {
   this.find({ isDeleted: { $ne: true } })
   next()
@@ -178,10 +161,4 @@ studentSchema.pre('aggregate', function (next) {
   this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } })
   next()
 })
-//creating a custom static
-studentSchema.statics.isUserExist = async function (id: string) {
-  const existingUser = await Student.findOne({ id })
-  return existingUser
-}
-
 export const Student = model<TStudent, StudentModel>('Student', studentSchema)
